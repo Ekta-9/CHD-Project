@@ -63,14 +63,13 @@ node_modules/
 # ML Service logs
 **/stdout.log
 **/stderr.log
+ml-service/test_*.py
 
 # Large model files (should be downloaded separately)
 **/models/**/*.safetensors
 **/models/**/*.bin
 **/models/**/*.pt
-**/models/**/*.pth
-
-# MinIO executables (should be downloaded separately)
+**/models/**/*.pth# MinIO executables (should be downloaded separately)
 **/minio/minio.exe
 **/minio/mc.exe
 **/minio/minio
