@@ -647,7 +647,7 @@
                     <option value="">-- Choose a patient --</option>
                 </select>
                 <button onclick="generateReport()" class="btn-primary" style="width: 100%;">
-                    📄 Generate Report
+                    Generate Report
                 </button>
             </div>
             
@@ -682,24 +682,13 @@
 
     <!-- View Patient Details Modal -->
     <div id="viewPatientModal" class="modal" onclick="closeModalOnBackdrop(event, 'viewPatientModal')">
-        <div class="modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
+        <div class="modal-content" style="width: 900px; max-width: 92vw;" onclick="event.stopPropagation()">
             <h2>Patient Details</h2>
             <div id="viewPatientModalBanner"></div>
             <div id="patientDetailsContent" style="line-height: 1.8;">
                 <!-- Patient details will be inserted here -->
             </div>
-            
-            <!-- ECG Scans Section -->
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8e8e8;">
-                <h3 style="margin-bottom: 15px; font-size: 1.1rem;">ECG Scans</h3>
-                <div id="patientScansContainer" style="margin-bottom: 15px;">
-                    <!-- Scans will be loaded here -->
-                </div>
-                <button onclick="openUploadScanModal()" class="btn-primary" style="width: 100%;">
-                    📤 Upload New ECG Scan
-                </button>
-            </div>
-            
+
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button id="editPatientBtn" onclick="openEditPatient()" class="btn-primary" style="flex: 1;">Edit Patient</button>
                 <button id="deletePatientBtn" onclick="deleteCurrentPatient()" class="btn-secondary" style="flex: 1; background: #dc2626; color: white; border: none;">Delete Patient</button>
@@ -711,7 +700,7 @@
     <!-- Upload Scan Modal -->
     <div id="uploadScanModal" class="modal" onclick="closeModalOnBackdrop(event, 'uploadScanModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h2>Upload ECG Scan</h2>
+            <h2>Upload Scan</h2>
             <div id="uploadScanModalBanner"></div>
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 8px; font-weight: 500;">Select ECG Image</label>
@@ -767,8 +756,8 @@
     <!-- Scan Image Viewer Modal -->
     <div id="scanViewerModal" class="scan-modal" onclick="closeScanViewer(event)">
         <div class="scan-modal-content" onclick="event.stopPropagation()">
-            <h3 id="scanViewerTitle">ECG Scan</h3>
-            <img id="scanViewerImage" src="" alt="ECG Scan">
+            <h3 id="scanViewerTitle">Scan</h3>
+            <img id="scanViewerImage" src="" alt="Scan">
             <br>
             <button class="scan-modal-close" onclick="closeScanViewer()">Close</button>
         </div>

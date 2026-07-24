@@ -222,7 +222,7 @@ window.onclick = function (event) {
 }
 
 function viewScan(patientName, scanUrl) {
-    document.getElementById('scanViewerTitle').innerText = `ECG Scan - ${patientName}`;
+    document.getElementById('scanViewerTitle').innerText = `Scan - ${patientName}`;
     document.getElementById('scanViewerImage').src = scanUrl;
     document.getElementById('scanViewerModal').style.display = 'flex';
 }
@@ -301,50 +301,62 @@ async function viewPatientDetails(patientId) {
         
         const content = document.getElementById('patientDetailsContent');
         content.innerHTML = `
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Name</p>
-                        <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${p.name}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Age</p>
-                        <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${p.age}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Gender</p>
-                        <p style="margin: 0; font-weight: 600;">${p.gender}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Date of Birth</p>
-                        <p style="margin: 0; font-weight: 600;">${p.dateOfBirth || 'N/A'}</p>
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Phone</p>
-                        <p style="margin: 0; font-weight: 600;">${p.phone || 'N/A'}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Name</p>
+                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${p.name}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Age</p>
+                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${p.age}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Gender</p>
+                            <p style="margin: 0; font-weight: 600;">${p.gender}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Date of Birth</p>
+                            <p style="margin: 0; font-weight: 600;">${p.dateOfBirth || 'N/A'}</p>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Phone</p>
+                            <p style="margin: 0; font-weight: 600;">${p.phone || 'N/A'}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Medical History</p>
-                    <p style="margin: 0; line-height: 1.6;">${p.medicalHistory || 'No medical history recorded'}</p>
+
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                    <div style="margin-bottom: 15px;">
+                        <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Medical History</p>
+                        <p style="margin: 0; line-height: 1.6;">${p.medicalHistory || 'No medical history recorded'}</p>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Diagnosis</p>
+                        <p style="margin: 0; line-height: 1.6;">${p.diagnosis || 'No diagnosis recorded'}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Notes</p>
+                        <p style="margin: 0; line-height: 1.6;">${p.notes || 'No notes recorded'}</p>
+                    </div>
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Diagnosis</p>
-                    <p style="margin: 0; line-height: 1.6;">${p.diagnosis || 'No diagnosis recorded'}</p>
+
+                <div style="background: #e8e8e8; padding: 15px; border-radius: 6px; font-size: 0.85rem; color: #555;">
+                    <p style="margin: 0 0 8px 0;"><strong>Anonymized Code:</strong> ${patient.anonymizedCode}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Access Role:</strong> <span style="text-transform: capitalize;">${patient.accessRole}</span></p>
+                    <p style="margin: 0;"><strong>Created:</strong> ${new Date(patient.createdAt).toLocaleString()}</p>
                 </div>
-                <div>
-                    <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Notes</p>
-                    <p style="margin: 0; line-height: 1.6;">${p.notes || 'No notes recorded'}</p>
+
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                    <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Scans</h3>
+                    <div id="patientScansContainer" style="margin-bottom: 15px;">
+                        <!-- Scans will be loaded here -->
+                    </div>
+                    <button onclick="openUploadScanModal()" class="btn-primary" style="width: 100%;">
+                        Upload New Scan
+                    </button>
                 </div>
-            </div>
-            
-            <div style="background: #e8e8e8; padding: 15px; border-radius: 6px; font-size: 0.85rem; color: #555;">
-                <p style="margin: 0 0 8px 0;"><strong>Anonymized Code:</strong> ${patient.anonymizedCode}</p>
-                <p style="margin: 0 0 8px 0;"><strong>Access Role:</strong> <span style="text-transform: capitalize;">${patient.accessRole}</span></p>
-                <p style="margin: 0;"><strong>Created:</strong> ${new Date(patient.createdAt).toLocaleString()}</p>
             </div>
         `;
         
@@ -496,14 +508,14 @@ async function loadPatientScans(patientId) {
         const container = document.getElementById('patientScansContainer');
         
         if (scans.length === 0) {
-            container.innerHTML = '<p style="color: #888; text-align: center; padding: 15px; background: #f9f9f9; border-radius: 8px;">No ECG scans uploaded yet.</p>';
+            container.innerHTML = '<p style="color: #888; text-align: center; padding: 15px; background: #f9f9f9; border-radius: 8px;">No scans uploaded yet.</p>';
             return;
         }
         
         container.innerHTML = scans.map(scan => `
             <div style="background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div style="font-weight: 600;">ECG Scan</div>
+                    <div style="font-weight: 600;">Scan</div>
                     <small style="color: #666;">Uploaded: ${new Date(scan.uploadedAt).toLocaleString()}</small>
                 </div>
                 <div style="display: flex; gap: 8px;">
@@ -606,7 +618,7 @@ async function viewScanImage(scanId) {
         win.document.write(`
             <html>
                 <head>
-                    <title>ECG Scan</title>
+                    <title>Scan</title>
                     <style>
                         body {
                             margin: 0;
@@ -648,7 +660,7 @@ async function viewScanImage(scanId) {
                 </head>
                 <body>
                     <button class="close-btn" onclick="window.close()" title="Close">×</button>
-                    <img src="${url}" alt="ECG Scan" />
+                    <img src="${url}" alt="Scan" />
                 </body>
             </html>
         `);
@@ -748,7 +760,7 @@ async function generateReport() {
     
     try {
         // Show loading
-        document.getElementById('reportDisplay').innerHTML = '<p style="text-align: center; padding: 40px;">⏳ Generating report...</p>';
+        document.getElementById('reportDisplay').innerHTML = '<p style="text-align: center; padding: 40px;">Generating report...</p>';
         document.getElementById('reportDisplay').style.display = 'block';
         
         // Fetch all data
@@ -810,7 +822,7 @@ function generateReportHTML(patient, scans, predictions) {
             
             <!-- ECG Scans Summary -->
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">ECG Scans Summary</h2>
+                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Scans Summary</h2>
                 ${scans.length > 0 ? `
                     <p><strong>Total Scans:</strong> ${scans.length}</p>
                     <ul style="margin: 10px 0; padding-left: 20px;">
@@ -820,7 +832,7 @@ function generateReportHTML(patient, scans, predictions) {
                             </li>
                         `).join('')}
                     </ul>
-                ` : '<p>No ECG scans uploaded yet.</p>'}
+                ` : '<p>No scans uploaded yet.</p>'}
             </div>
             
             <!-- ML Predictions -->
@@ -866,10 +878,10 @@ function generateReportHTML(patient, scans, predictions) {
             <!-- Action Buttons -->
             <div style="text-align: center; margin-top: 30px;">
                 <button onclick="printReport()" class="btn-primary" style="margin-right: 10px;">
-                    🖨️ Print Report
+                    Print Report
                 </button>
                 <button onclick="downloadReportPDF()" class="btn-primary">
-                    📥 Download PDF
+                    Download PDF
                 </button>
             </div>
         </div>
