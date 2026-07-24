@@ -20,7 +20,7 @@
   <properties>
     <java.version>21</java.version>
     <jjwt.version>0.11.5</jjwt.version>
-    <minio.version>8.5.9</minio.version>
+    <awssdk.version>2.29.52</awssdk.version>
     <argon2.version>2.11</argon2.version>
   </properties>
 
@@ -75,11 +75,11 @@
     </dependency>
 
 
-    <!-- MinIO -->
+    <!-- S3-compatible object storage (Supabase Storage) -->
     <dependency>
-      <groupId>io.minio</groupId>
-      <artifactId>minio</artifactId>
-      <version>${minio.version}</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>${awssdk.version}</version>
     </dependency>
 
     <!-- JWT -->

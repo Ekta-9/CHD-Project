@@ -10,10 +10,6 @@ import com.ecgcare.backend.repository.DoctorRepository;
 import com.ecgcare.backend.repository.EcgScanRepository;
 import com.ecgcare.backend.repository.PatientAccessRepository;
 import com.ecgcare.backend.repository.PatientRepository;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.GetObjectArgs;
-import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +18,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.InputStream;
 import java.time.OffsetDateTime;
@@ -39,7 +41,7 @@ public class ScanService {
         private final PatientRepository patientRepository;
         private final DoctorRepository doctorRepository;
         private final PatientAccessRepository patientAccessRepository;
-        private final MinioClient minioClient;
+        private final S3Client s3Client;
         private final com.ecgcare.backend.config.MinIOProperties minIOProperties;
         private final AuditService auditService;
 
@@ -71,13 +73,13 @@ public class ScanService {
                         UUID scanId = UUID.randomUUID();
                         String storageUri = String.format("%s/%s/%s", patientId, scanId, file.getOriginalFilename());
 
-                        // Upload to MinIO
-                        minioClient.putObject(PutObjectArgs.builder()
+                        // Upload to storage
+                        s3Client.putObject(PutObjectRequest.builder()
                                         .bucket(minIOProperties.getBucket())
-                                        .object(storageUri)
-                                        .stream(file.getInputStream(), file.getSize(), -1)
+                                        .key(storageUri)
                                         .contentType(mimetype)
-                                        .build());
+                                        .build(),
+                                        RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
                         // Calculate checksum (simplified)
                         String checksum = "sha256:" + UUID.randomUUID().toString();
@@ -105,14 +107,9 @@ public class ScanService {
                                         .uploadedBy(doctorId)
                                         .uploadedAt(scan.getUploadedAt())
                                         .build();
-                } catch (io.minio.errors.ErrorResponseException e) {
-                        log.error("MinIO error during upload: {} - {}", e.errorResponse().code(),
-                                        e.errorResponse().message(), e);
-                        throw new RuntimeException("Failed to upload scan to MinIO: " + e.getMessage(), e);
-                } catch (java.net.ConnectException e) {
-                        log.error("Cannot connect to MinIO server at {}", minIOProperties.getEndpoint(), e);
-                        throw new RuntimeException("MinIO server is not accessible. Please ensure MinIO is running at "
-                                        + minIOProperties.getEndpoint(), e);
+                } catch (S3Exception e) {
+                        log.error("Storage error during upload: {} - {}", e.statusCode(), e.getMessage(), e);
+                        throw new RuntimeException("Failed to upload scan to storage: " + e.getMessage(), e);
                 } catch (Exception e) {
                         log.error("Failed to upload scan: {}", e.getMessage(), e);
                         throw new RuntimeException("Failed to upload scan: " + e.getMessage(), e);
@@ -148,9 +145,9 @@ public class ScanService {
                                 .orElseThrow(() -> new ForbiddenException("No access to this scan"));
 
                 try {
-                        return minioClient.getObject(GetObjectArgs.builder()
+                        return s3Client.getObject(GetObjectRequest.builder()
                                         .bucket(minIOProperties.getBucket())
-                                        .object(scan.getStorageUri())
+                                        .key(scan.getStorageUri())
                                         .build());
                 } catch (Exception e) {
                         log.error("Failed to download scan", e);
@@ -204,13 +201,12 @@ public class ScanService {
                                 .orElseThrow(() -> new ForbiddenException("No access to this scan"));
 
                 try {
-                        // Delete from MinIO
-                        minioClient.removeObject(RemoveObjectArgs.builder()
+                        s3Client.deleteObject(DeleteObjectRequest.builder()
                                         .bucket(minIOProperties.getBucket())
-                                        .object(scan.getStorageUri())
+                                        .key(scan.getStorageUri())
                                         .build());
                 } catch (Exception e) {
-                        log.error("Failed to delete scan from MinIO", e);
+                        log.error("Failed to delete scan from storage", e);
                 }
 
                 scanRepository.delete(scan);

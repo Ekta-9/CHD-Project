@@ -32,6 +32,7 @@ minio:
   accessKey: ${MINIO_ACCESS_KEY:minio}
   secretKey: ${MINIO_SECRET_KEY:minio12345}
   bucket: ${MINIO_BUCKET:ecg-bucket}
+  region: ${MINIO_REGION:us-east-1}
 
 jwt:
   issuer: ecgcare

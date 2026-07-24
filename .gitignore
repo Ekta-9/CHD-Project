@@ -29,6 +29,7 @@ Thumbs.db
 # Environment variables (sensitive)
 .env
 *.env
+.env.*
 
 # Python
 __pycache__/
