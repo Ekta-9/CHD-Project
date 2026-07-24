@@ -90,3 +90,5 @@ Never commit `.env` files or real secrets — see `.gitignore`.
 - [`docs/COMPLETE_DOCUMENTATION.md`](docs/COMPLETE_DOCUMENTATION.md) — full system documentation
 - [`docs/ML_SERVICE_GUIDE.md`](docs/ML_SERVICE_GUIDE.md) — ML service internals and model details
 - [`docs/fixes.md`](docs/fixes.md) — known issues and cleanup log from the last audit
+
+## Documents
