@@ -3,6 +3,76 @@ let editingIndex = null;
 let filteredPatients = null;
 let searchTimeout = null;
 
+// ============================================
+// UI FEEDBACK HELPERS (replace native alert/confirm)
+// ============================================
+
+// Shows a message inside a specific container (e.g. a modal), so errors stay
+// next to the form the user is filling in instead of blocking the page.
+function showBanner(containerId, message, type = 'error', persist = false) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    const banner = document.createElement('div');
+    banner.className = `inline-banner banner-${type}`;
+    banner.innerHTML = `<span>${message}</span><button class="banner-close" aria-label="Dismiss">&times;</button>`;
+    banner.querySelector('.banner-close').onclick = () => banner.remove();
+    container.appendChild(banner);
+
+    if (type !== 'error' && !persist) {
+        setTimeout(() => banner.remove(), 5000);
+    }
+}
+
+// Shows a message at the top of the page - used when there's no open modal
+// to attach an inline banner to (e.g. a success message right after a modal closes).
+function showPageBanner(message, type = 'error') {
+    const container = document.getElementById('pageBanner');
+    container.innerHTML = '';
+
+    const banner = document.createElement('div');
+    banner.className = `page-banner-inner banner-${type}`;
+    banner.innerHTML = `<span>${message}</span><button class="banner-close" aria-label="Dismiss">&times;</button>`;
+    banner.querySelector('.banner-close').onclick = () => banner.remove();
+    container.appendChild(banner);
+
+    if (type !== 'error') {
+        setTimeout(() => banner.remove(), 5000);
+    }
+}
+
+// Promise-based replacement for confirm() - resolves true/false instead of
+// blocking the page with a native browser dialog.
+function showConfirm(message, options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        document.getElementById('confirmModalTitle').textContent = options.title || 'Please confirm';
+        document.getElementById('confirmModalMessage').textContent = message;
+
+        const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+        confirmBtn.textContent = options.confirmText || 'Confirm';
+        confirmBtn.style.background = options.danger ? '#dc2626' : '';
+
+        function cleanup(result) {
+            modal.classList.remove('show');
+            confirmBtn.removeEventListener('click', onConfirm);
+            cancelBtn.removeEventListener('click', onCancel);
+            resolve(result);
+        }
+        function onConfirm() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.classList.add('show');
+    });
+}
+
+window.showConfirm = showConfirm;
+
 function switchTab(tabName) {
     document.getElementById('section-home').style.display = 'none';
     document.getElementById('section-patients').style.display = 'none';
@@ -115,11 +185,12 @@ function filterPatients() {
 }
 
 function openAddModal() {
+    document.getElementById('addPatientModalBanner').innerHTML = '';
     document.getElementById('addPatientModal').style.display = 'block';
 }
 
 async function logout() {
-    if (confirm("Are you sure you want to logout?")) {
+    if (await showConfirm("Are you sure you want to logout?")) {
         try {
             await API.logout();
         } catch (error) {
@@ -173,7 +244,7 @@ async function addNewPatient() {
     const notes = document.getElementById('newPatientNotes').value.trim();
 
     if (!name || !age || !gender) {
-        alert("Please fill in Name, Age, and Gender");
+        showBanner('addPatientModalBanner', "Please fill in Name, Age, and Gender");
         return;
     }
 
@@ -188,17 +259,16 @@ async function addNewPatient() {
             diagnosis: diagnosis || "",
             notes: notes || ""
         });
-        
-        alert("Patient added successfully!");
-        
+
         // Reload patients
         const result = await API.listPatients();
         patients = result.content || [];
         renderPatients(patients);
-        
+
         closeAddModal();
+        showPageBanner("Patient added successfully!", 'success');
     } catch (error) {
-        alert("Failed to add patient: " + error.message);
+        showBanner('addPatientModalBanner', "Failed to add patient: " + error.message);
     }
 }
 
@@ -278,9 +348,10 @@ async function viewPatientDetails(patientId) {
             </div>
         `;
         
+        document.getElementById('viewPatientModalBanner').innerHTML = '';
         document.getElementById('viewPatientModal').style.display = 'flex';
     } catch (error) {
-        alert('Failed to load patient details: ' + error.message);
+        showPageBanner('Failed to load patient details: ' + error.message);
     }
 }
 
@@ -320,6 +391,7 @@ function openEditPatient() {
     
     // Close view modal and open edit modal
     document.getElementById('viewPatientModal').style.display = 'none';
+    document.getElementById('editPatientModalBanner').innerHTML = '';
     document.getElementById('editPatientModal').style.display = 'flex';
 }
 
@@ -336,10 +408,10 @@ async function savePatientEdit() {
     const notes = document.getElementById('editPatientNotes').value.trim();
     
     if (!name || !age || !gender) {
-        alert("Please fill in Name, Age, and Gender");
+        showBanner('editPatientModalBanner', "Please fill in Name, Age, and Gender");
         return;
     }
-    
+
     try {
         await API.updatePatient(currentPatient.patientId, {
             name,
@@ -351,17 +423,16 @@ async function savePatientEdit() {
             diagnosis: diagnosis || "",
             notes: notes || ""
         });
-        
-        alert("Patient updated successfully!");
-        
+
         // Reload patients list
         const result = await API.listPatients();
         patients = result.content || [];
         renderPatients(patients);
-        
+
         closeEditModal();
+        showPageBanner("Patient updated successfully!", 'success');
     } catch (error) {
-        alert("Failed to update patient: " + error.message);
+        showBanner('editPatientModalBanner', "Failed to update patient: " + error.message);
     }
 }
 
@@ -373,24 +444,26 @@ async function deleteCurrentPatient() {
     if (!currentPatient) return;
     
     const p = currentPatient.patientData;
-    const confirmDelete = confirm(`Are you sure you want to delete patient "${p.name}"?\n\nThis action cannot be undone.`);
-    
+    const confirmDelete = await showConfirm(
+        `Are you sure you want to delete patient "${p.name}"?\n\nThis action cannot be undone.`,
+        { danger: true, confirmText: 'Delete' }
+    );
+
     if (!confirmDelete) return;
-    
+
     try {
         await API.deletePatient(currentPatient.patientId);
-        
-        alert("Patient deleted successfully!");
-        
+
         // Reload patients list
         const result = await API.listPatients();
         patients = result.content || [];
         renderPatients(patients);
-        
+
         closeViewPatientModal();
         currentPatient = null;
+        showPageBanner("Patient deleted successfully!", 'success');
     } catch (error) {
-        alert("Failed to delete patient: " + error.message);
+        showBanner('viewPatientModalBanner', "Failed to delete patient: " + error.message);
     }
 }
 
@@ -450,6 +523,7 @@ async function loadPatientScans(patientId) {
 
 function openUploadScanModal() {
     if (!currentPatient) return;
+    document.getElementById('uploadScanModalBanner').innerHTML = '';
     document.getElementById('uploadScanModal').style.display = 'flex';
     
     // Add preview functionality
@@ -481,19 +555,19 @@ async function uploadScan() {
     const notes = document.getElementById('scanNotes').value.trim();
     
     if (!file) {
-        alert('Please select an image file');
+        showBanner('uploadScanModalBanner', 'Please select an image file');
         return;
     }
-    
+
     // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
+        showBanner('uploadScanModalBanner', 'File size must be less than 10MB');
         return;
     }
-    
+
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-        alert('Only JPEG and PNG images are supported');
+        showBanner('uploadScanModalBanner', 'Only JPEG and PNG images are supported');
         return;
     }
     
@@ -504,18 +578,18 @@ async function uploadScan() {
     try {
         const metadata = notes ? JSON.stringify({ notes }) : '';
         await API.uploadScan(file, currentPatient.patientId, metadata);
-        
-        alert('Scan uploaded successfully!');
+
         closeUploadScanModal();
-        
+
         // Reload scans
         await loadPatientScans(currentPatient.patientId);
-        
+
         // Keep patient details modal open
         document.getElementById('viewPatientModal').style.display = 'flex';
-        
+        showBanner('viewPatientModalBanner', 'Scan uploaded successfully!', 'success');
+
     } catch (error) {
-        alert('Failed to upload scan: ' + error.message);
+        showBanner('uploadScanModalBanner', 'Failed to upload scan: ' + error.message);
     } finally {
         uploadBtn.disabled = false;
         uploadBtn.textContent = 'Upload Scan';
@@ -583,38 +657,45 @@ async function viewScanImage(scanId) {
         setTimeout(() => URL.revokeObjectURL(url), 60000);
         
     } catch (error) {
-        alert('Failed to load scan image: ' + error.message);
+        showBanner('viewPatientModalBanner', 'Failed to load scan image: ' + error.message);
     }
 }
 
 async function analyzeScan(scanId) {
-    if (!confirm('Trigger ML analysis for this scan?')) return;
-    
+    if (!(await showConfirm('Trigger ML analysis for this scan?'))) return;
+
     try {
         const result = await API.predictFromScan(scanId);
-        
-        // Show results in a nice modal
-        alert(`ML Analysis Complete!\n\nPredicted Diagnosis: ${result.predictedLabel}\nConfidence: ${(result.confidenceScore * 100).toFixed(2)}%\n\nClass Probabilities:\n${Object.entries(result.classProbabilities).map(([label, prob]) => `${label}: ${(prob * 100).toFixed(2)}%`).join('\n')}`);
-        
+
+        const probsHtml = Object.entries(result.classProbabilities)
+            .map(([label, prob]) => `${label}: ${(prob * 100).toFixed(2)}%`)
+            .join('<br>');
+        showBanner(
+            'viewPatientModalBanner',
+            `<strong>ML Analysis Complete</strong><br>Predicted Diagnosis: ${result.predictedLabel}<br>Confidence: ${(result.confidenceScore * 100).toFixed(2)}%<br><br>${probsHtml}`,
+            'success',
+            true
+        );
+
     } catch (error) {
-        alert('ML analysis failed: ' + error.message);
+        showBanner('viewPatientModalBanner', 'ML analysis failed: ' + error.message);
     }
 }
 
 async function deleteScan(scanId) {
-    if (!confirm('Are you sure you want to delete this scan?')) return;
-    
+    if (!(await showConfirm('Are you sure you want to delete this scan?', { danger: true, confirmText: 'Delete' }))) return;
+
     try {
         await API.deleteScan(scanId);
-        alert('Scan deleted successfully!');
-        
+
         // Reload scans
         if (currentPatient) {
             await loadPatientScans(currentPatient.patientId);
         }
-        
+        showBanner('viewPatientModalBanner', 'Scan deleted successfully!', 'success');
+
     } catch (error) {
-        alert('Failed to delete scan: ' + error.message);
+        showBanner('viewPatientModalBanner', 'Failed to delete scan: ' + error.message);
     }
 }
 
@@ -653,15 +734,15 @@ async function loadPatientsForReport() {
             select.appendChild(option);
         });
     } catch (error) {
-        alert('Failed to load patients: ' + error.message);
+        showBanner('reportSectionBanner', 'Failed to load patients: ' + error.message);
     }
 }
 
 async function generateReport() {
     const patientId = document.getElementById('reportPatientSelect').value;
-    
+
     if (!patientId) {
-        alert('Please select a patient');
+        showBanner('reportSectionBanner', 'Please select a patient');
         return;
     }
     
@@ -800,7 +881,12 @@ function printReport() {
 }
 
 function downloadReportPDF() {
-    alert('PDF download feature coming soon!\n\nFor now, you can use "Print Report" and save as PDF from the print dialog.');
+    showBanner(
+        'reportSectionBanner',
+        'PDF download feature coming soon! For now, you can use "Print Report" and save as PDF from the print dialog.',
+        'info',
+        true
+    );
 }
 
 // Make functions globally available
@@ -849,7 +935,7 @@ async function showAccountDetails() {
         document.getElementById('accountDetailsModal').style.display = 'flex';
         
     } catch (error) {
-        alert('Failed to load account details: ' + error.message);
+        showPageBanner('Failed to load account details: ' + error.message);
     }
 }
 
