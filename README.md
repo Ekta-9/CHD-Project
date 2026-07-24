@@ -1,6 +1,6 @@
 
 
-# CHD-EPICS (ECGCare)
+# CHD-EPICS (ECGCare) test
 
 A web app for doctors to upload ECG scans and get an ML-assisted screening for congenital heart defects (CHD) — classifying scans as **Normal**, **ASD**, or **VSD**.
 
