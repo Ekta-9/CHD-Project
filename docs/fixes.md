@@ -6,16 +6,6 @@ Severity key: 🔴 Critical &nbsp; 🟠 Significant &nbsp; 🟡 Minor / cleanup 
 
 ---
 
-## 0. Security — rotate immediately
-
-🔴 **Hugging Face token exposed in cleartext in a git remote URL**
-- Where: `CHD-EPICS/chd-ml/.git/config` (nested git repo, HF Space clone)
-- The remote URL was `https://Ektah:[REDACTED-TOKEN]@huggingface.co/spaces/Ektah/chd-ml`
-- The token sat in plaintext on disk with push access to the HF Space.
-- **Status**: the local `chd-ml/` clone has been deleted (2026-07-13). The token itself still needs to be rotated at huggingface.co/settings/tokens — deleting the folder does not invalidate it. Use a credential helper instead of embedding tokens in remote URLs going forward.
-
----
-
 ## 1. Database
 
 🔴 **Production has no persistent database.**
@@ -41,13 +31,16 @@ Severity key: 🔴 Critical &nbsp; 🟠 Significant &nbsp; 🟡 Minor / cleanup 
 
 ## 2. Backend APIs
 
-🔴 **Patient data "encryption" doesn't actually protect anything from someone with DB access.**
+~~🔴 **Patient data "encryption" doesn't actually protect anything from someone with DB access.**~~ — fixed 2026-07-24.
 - Design intent: each patient's data key (DEK) is wrapped with each doctor's personal key pair, so only that doctor can unlock it.
 - Reality (`EncryptionService.java`):
   - The doctor's **private key is stored in the database completely unencrypted** (`AuthService.register()` — comment admits *"simplified — storing raw bytes for now... In production, this should use proper encryption"*).
   - The **wrap/unwrap logic doesn't use the private key at all** — it hashes the doctor's *public* key (non-secret by definition) and uses that hash as a symmetric key. Comment admits *"Simplified... In production, use RSA-OAEP with the private key."*
 - Net effect: anyone with direct database read access can recompute the same hash from data sitting in the same table and decrypt every patient's medical record — no login, password, or private key required.
 - Files: `backend/src/main/java/com/ecgcare/backend/service/EncryptionService.java`, `AuthService.java` (register method, ~line 62-89)
+- **Fix**: private key is now encrypted at rest with a key derived from the doctor's password (PBKDF2, 210k iterations, via the previously-unused `privateKeySalt` column). `wrapKey`/`unwrapKey` now do real RSA-OAEP against actual `PublicKey`/`PrivateKey` objects instead of hashing the public key. The decrypted private key lives only in a new in-memory `DoctorKeyCache`, keyed by session ID, populated at login and evicted at logout — never persisted. New `sessionId` is threaded from the JWT through `JwtAuthenticationFilter` → `PatientController` → `PatientService` to look it up.
+  - **Known limitation**: the key cache is in-memory only, so a server restart clears it — patient reads/updates will 401 with "Session encryption key not available" until each doctor logs in again, even if their JWT is still otherwise valid. Not a regression (nothing was persisted before either), just worth knowing when testing.
+  - **Not yet migrated**: any doctor accounts created before this fix have private keys stored in the old raw format and cannot be decrypted by the new code — those test accounts need to be re-registered.
 
 🟠 **"Share patient with another doctor" is broken — it 500-errors for the recipient.**
 - `PatientAccessController.shareAccess()` only inserts a `PatientAccess` permission row; it explicitly skips creating the matching `PatientKey` entry (comment: *"simplified — key wrapping would happen here"*).

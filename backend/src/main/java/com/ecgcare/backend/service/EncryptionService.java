@@ -7,10 +7,17 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Map;
 
@@ -22,6 +29,11 @@ public class EncryptionService {
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 16;
     private static final int KEY_SIZE = 256;
+
+    private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+    private static final String KEK_ALGORITHM = "PBKDF2WithHmacSHA256";
+    public static final int KEK_ITERATIONS = 210_000;
+    private static final int KEK_KEY_LENGTH = 256;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -96,28 +108,65 @@ public class EncryptionService {
         return new SecretKeySpec(keyBytes, ALGORITHM);
     }
 
-    // Simplified key wrapping (for production, use RSA-OAEP)
-    public EncryptedData wrapKey(SecretKey dek, byte[] publicKey) throws Exception {
-        // Simplified: derive a symmetric key from public key hash for testing
-        // In production, use RSA-OAEP with the public key
-        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] keyHash = digest.digest(publicKey);
-        // Use first 32 bytes as AES key
-        byte[] derivedKey = new byte[32];
-        System.arraycopy(keyHash, 0, derivedKey, 0, Math.min(32, keyHash.length));
-        SecretKeySpec wrappingKey = new SecretKeySpec(derivedKey, ALGORITHM);
-        return encrypt(serializeKey(dek), wrappingKey);
+    // Wraps a DEK with the doctor's real RSA public key (RSA-OAEP). Only the
+    // matching private key can unwrap it back.
+    public EncryptedData wrapKey(SecretKey dek, PublicKey publicKey) throws Exception {
+        Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        byte[] wrapped = cipher.doFinal(serializeKey(dek));
+        // RSA-OAEP is not a streaming/AEAD mode - there's no IV or tag to carry,
+        // but EncryptedData's shape is shared with the AES-GCM paths, so these
+        // are just empty rather than unused.
+        return new EncryptedData(wrapped, new byte[0], new byte[0]);
     }
 
-    public SecretKey unwrapKey(EncryptedData wrappedKey, byte[] publicKey) throws Exception {
-        // Simplified: derive the same symmetric key from public key hash
-        // In production, use RSA-OAEP with the private key
-        java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] keyHash = digest.digest(publicKey);
-        byte[] derivedKey = new byte[32];
-        System.arraycopy(keyHash, 0, derivedKey, 0, Math.min(32, keyHash.length));
-        SecretKeySpec wrappingKey = new SecretKeySpec(derivedKey, ALGORITHM);
-        byte[] keyBytes = decrypt(wrappedKey, wrappingKey);
+    public SecretKey unwrapKey(EncryptedData wrappedKey, PrivateKey privateKey) throws Exception {
+        Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        byte[] keyBytes = cipher.doFinal(wrappedKey.data());
         return deserializeKey(keyBytes);
+    }
+
+    // Derives a Key-Encryption-Key from a doctor's password. Used to encrypt
+    // their RSA private key at rest - never persisted itself.
+    public SecretKey deriveKEK(char[] password, byte[] salt, int iterations) throws Exception {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance(KEK_ALGORITHM);
+        PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, KEK_KEY_LENGTH);
+        try {
+            byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+            return new SecretKeySpec(keyBytes, ALGORITHM);
+        } finally {
+            spec.clearPassword();
+        }
+    }
+
+    public PublicKey publicKeyFromBytes(byte[] bytes) throws Exception {
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
+        return KeyFactory.getInstance("RSA").generatePublic(spec);
+    }
+
+    public PrivateKey privateKeyFromBytes(byte[] bytes) throws Exception {
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(bytes);
+        return KeyFactory.getInstance("RSA").generatePrivate(spec);
+    }
+
+    // Packs an AES-GCM EncryptedData into a single blob (iv || tag || ciphertext)
+    // so it fits in a single DB column, using the fixed GCM_IV_LENGTH/GCM_TAG_LENGTH.
+    public byte[] packEncrypted(EncryptedData encryptedData) {
+        ByteBuffer buffer = ByteBuffer.allocate(GCM_IV_LENGTH + GCM_TAG_LENGTH + encryptedData.data().length);
+        buffer.put(encryptedData.iv());
+        buffer.put(encryptedData.tag());
+        buffer.put(encryptedData.data());
+        return buffer.array();
+    }
+
+    public EncryptedData unpackEncrypted(byte[] packed) {
+        byte[] iv = new byte[GCM_IV_LENGTH];
+        byte[] tag = new byte[GCM_TAG_LENGTH];
+        byte[] data = new byte[packed.length - GCM_IV_LENGTH - GCM_TAG_LENGTH];
+        System.arraycopy(packed, 0, iv, 0, GCM_IV_LENGTH);
+        System.arraycopy(packed, GCM_IV_LENGTH, tag, 0, GCM_TAG_LENGTH);
+        System.arraycopy(packed, GCM_IV_LENGTH + GCM_TAG_LENGTH, data, 0, data.length);
+        return new EncryptedData(data, iv, tag);
     }
 }

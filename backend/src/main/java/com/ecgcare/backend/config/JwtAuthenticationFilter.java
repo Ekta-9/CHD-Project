@@ -40,9 +40,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (doctorId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (jwtService.validateToken(jwt)) {
+                    final UUID sessionId = jwtService.extractSessionId(jwt);
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             doctorId,
-                            null,
+                            sessionId,
                             Collections.singletonList(new SimpleGrantedAuthority("ROLE_DOCTOR")));
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);

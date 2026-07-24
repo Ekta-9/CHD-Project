@@ -37,7 +37,8 @@ public class PatientController {
             @PathVariable UUID patientId,
             Authentication authentication) {
         UUID doctorId = UUID.fromString(authentication.getName());
-        PatientResponse response = patientService.getPatient(patientId, doctorId);
+        UUID sessionId = (UUID) authentication.getCredentials();
+        PatientResponse response = patientService.getPatient(patientId, doctorId, sessionId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -59,7 +60,8 @@ public class PatientController {
             @Valid @RequestBody PatientUpdateRequest request,
             Authentication authentication) {
         UUID doctorId = UUID.fromString(authentication.getName());
-        PatientResponse response = patientService.updatePatient(patientId, request, doctorId);
+        UUID sessionId = (UUID) authentication.getCredentials();
+        PatientResponse response = patientService.updatePatient(patientId, request, doctorId, sessionId);
         return ResponseEntity.ok(ApiResponse.success("Patient updated successfully", response));
     }
 

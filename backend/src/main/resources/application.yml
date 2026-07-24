@@ -16,6 +16,8 @@ spring:
     properties:
       hibernate:
         format_sql: false
+        type:
+          preferred_uuid_jdbc_type: VARCHAR
   flyway:
     enabled: true
     baseline-on-migrate: true

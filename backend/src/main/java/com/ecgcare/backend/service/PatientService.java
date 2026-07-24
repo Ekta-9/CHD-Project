@@ -7,6 +7,7 @@ import com.ecgcare.backend.dto.response.PatientResponse;
 import com.ecgcare.backend.entity.*;
 import com.ecgcare.backend.exception.ForbiddenException;
 import com.ecgcare.backend.exception.NotFoundException;
+import com.ecgcare.backend.exception.UnauthorizedException;
 import com.ecgcare.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +38,7 @@ public class PatientService {
     private final com.ecgcare.backend.repository.DoctorCryptoRepository doctorCryptoRepository;
     private final EncryptionService encryptionService;
     private final AuditService auditService;
+    private final DoctorKeyCache doctorKeyCache;
 
     @Transactional
     public PatientResponse createPatient(PatientCreateRequest request, UUID doctorId) {
@@ -58,14 +62,13 @@ public class PatientService {
                     .build();
             patient = patientRepository.save(patient);
 
-            // Store encrypted DEK (simplified - using doctor's public key)
+            // Wrap the DEK with the doctor's real RSA public key. Wrapping only ever
+            // needs the public key, so no session/private key is required here.
             DoctorCrypto doctorCrypto = doctorCryptoRepository.findById(doctorId)
-                    .orElseThrow(() -> new RuntimeException("Doctor crypto not found"));
+                    .orElseThrow(() -> new NotFoundException("Doctor crypto not found"));
 
-            // Wrap DEK (simplified)
-            EncryptionService.EncryptedData wrappedDek = encryptionService.wrapKey(
-                    encrypted.key(),
-                    doctorCrypto.getPublicKey());
+            PublicKey publicKey = encryptionService.publicKeyFromBytes(doctorCrypto.getPublicKey());
+            EncryptionService.EncryptedData wrappedDek = encryptionService.wrapKey(encrypted.key(), publicKey);
 
             PatientKey patientKey = PatientKey.builder()
                     .patient(patient)
@@ -101,7 +104,7 @@ public class PatientService {
         }
     }
 
-    public PatientResponse getPatient(UUID patientId, UUID doctorId) {
+    public PatientResponse getPatient(UUID patientId, UUID doctorId, UUID sessionId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found"));
 
@@ -112,18 +115,18 @@ public class PatientService {
         try {
             // Get encrypted DEK
             PatientKey patientKey = patientKeyRepository.findByPatient_PatientIdAndDoctor_DoctorId(patientId, doctorId)
-                    .orElseThrow(() -> new RuntimeException("Patient key not found"));
+                    .orElseThrow(() -> new NotFoundException("Patient key not found"));
 
-            // Unwrap DEK (simplified)
-            DoctorCrypto doctorCrypto = doctorCryptoRepository.findById(doctorId)
-                    .orElseThrow(() -> new RuntimeException("Doctor crypto not found"));
+            // Unwrap DEK with this doctor's private key, held in memory since login
+            PrivateKey privateKey = doctorKeyCache.get(sessionId)
+                    .orElseThrow(() -> new UnauthorizedException("Session encryption key not available - please log in again"));
 
             EncryptionService.EncryptedData wrappedDek = new EncryptionService.EncryptedData(
                     patientKey.getDekEnc(),
                     patientKey.getDekIv(),
                     patientKey.getDekTag());
 
-            SecretKey dek = encryptionService.unwrapKey(wrappedDek, doctorCrypto.getPublicKey());
+            SecretKey dek = encryptionService.unwrapKey(wrappedDek, privateKey);
 
             // Decrypt patient data
             EncryptionService.EncryptedData encryptedData = new EncryptionService.EncryptedData(
@@ -143,6 +146,8 @@ public class PatientService {
                     .createdAt(patient.getCreatedAt())
                     .updatedAt(patient.getUpdatedAt())
                     .build();
+        } catch (NotFoundException | UnauthorizedException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to get patient", e);
             throw new RuntimeException("Failed to get patient: " + e.getMessage());
@@ -185,7 +190,7 @@ public class PatientService {
     }
 
     @Transactional
-    public PatientResponse updatePatient(UUID patientId, PatientUpdateRequest request, UUID doctorId) {
+    public PatientResponse updatePatient(UUID patientId, PatientUpdateRequest request, UUID doctorId, UUID sessionId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found"));
 
@@ -200,18 +205,18 @@ public class PatientService {
         try {
             // Re-encrypt with existing DEK
             PatientKey patientKey = patientKeyRepository.findByPatient_PatientIdAndDoctor_DoctorId(patientId, doctorId)
-                    .orElseThrow(() -> new RuntimeException("Patient key not found"));
+                    .orElseThrow(() -> new NotFoundException("Patient key not found"));
 
-            // Unwrap DEK and encrypt new data
-            DoctorCrypto doctorCrypto = doctorCryptoRepository.findById(doctorId)
-                    .orElseThrow(() -> new RuntimeException("Doctor crypto not found"));
+            // Unwrap DEK with this doctor's private key, held in memory since login
+            PrivateKey privateKey = doctorKeyCache.get(sessionId)
+                    .orElseThrow(() -> new UnauthorizedException("Session encryption key not available - please log in again"));
 
             EncryptionService.EncryptedData wrappedDek = new EncryptionService.EncryptedData(
                     patientKey.getDekEnc(),
                     patientKey.getDekIv(),
                     patientKey.getDekTag());
 
-            SecretKey dek = encryptionService.unwrapKey(wrappedDek, doctorCrypto.getPublicKey());
+            SecretKey dek = encryptionService.unwrapKey(wrappedDek, privateKey);
             EncryptionService.EncryptedData encrypted = encryptionService.encrypt(
                     new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(request.getPatientData()),
                     dek);
@@ -229,6 +234,8 @@ public class PatientService {
                     .accessRole(role)
                     .updatedAt(patient.getUpdatedAt())
                     .build();
+        } catch (NotFoundException | UnauthorizedException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to update patient", e);
             throw new RuntimeException("Failed to update patient: " + e.getMessage());
