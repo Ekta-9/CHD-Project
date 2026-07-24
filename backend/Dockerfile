@@ -11,5 +11,5 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+CMD ["java", "-Xmx256m", "-XX:MaxMetaspaceSize=128m", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
 
