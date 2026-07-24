@@ -1,6 +1,4 @@
-
-
-# CHD-EPICS (ECGCare) test
+# CHD-EPICS (ECGCare)
 
 A web app for doctors to upload ECG scans and get an ML-assisted screening for congenital heart defects (CHD) — classifying scans as **Normal**, **ASD**, or **VSD**.
 
@@ -16,7 +14,7 @@ frontend  --->  backend (Spring Boot)  --->  ml-service (FastAPI)
 
 ```
 .
-├── backend/          Spring Boot API — auth, patients, scans, MinIO storage, ML orchestration
+├── backend/          Spring Boot API — auth, patients, scans, object storage, ML orchestration
 ├── frontend/          Static HTML/CSS/JS doctor dashboard (no build step)
 ├── ml-service/        FastAPI service serving the trained CHD classifier
 ├── docs/              Full documentation, ML service guide, and audit notes
@@ -28,15 +26,15 @@ frontend  --->  backend (Spring Boot)  --->  ml-service (FastAPI)
 
 | Layer | Stack |
 |---|---|
-| Backend | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, H2 (local) / PostgreSQL (production) |
+| Backend | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, H2 (local) / PostgreSQL via Supabase (production) |
 | ML service | Python, FastAPI, PyTorch, Hugging Face Transformers (ConvNeXt) |
 | Frontend | Plain HTML/CSS/JavaScript |
-| File storage | MinIO (S3-compatible) |
+| File storage | S3-compatible object storage (AWS SDK v2) — local MinIO in dev, Supabase Storage in production |
 | Auth | JWT (access + refresh tokens) |
 
 ## Running locally
 
-**Prerequisites**: JDK 21, Maven, Python 3.10+, and MinIO (`minio.exe`/`mc.exe`, not included in the repo — download from [min.io](https://min.io/download)).
+**Prerequisites**: JDK 21, Maven, Python 3.10+, and MinIO (`minio.exe`, not included in the repo — download from [min.io](https://min.io/download)) for local object storage.
 
 Quickest way — run everything at once:
 
@@ -69,8 +67,8 @@ Copy the defaults in `backend/src/main/resources/application.yml` and `ml-servic
 
 | Variable | Used by | Purpose |
 |---|---|---|
-| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | backend | Database connection (H2 locally, PostgreSQL in production) |
-| `MINIO_ENDPOINT` / `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` / `MINIO_BUCKET` | backend | Object storage for uploaded scans |
+| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | backend | Database connection (H2 locally, Supabase PostgreSQL in production) |
+| `MINIO_ENDPOINT` / `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` / `MINIO_BUCKET` / `MINIO_REGION` | backend | S3-compatible object storage for uploaded scans (local MinIO or Supabase Storage — variable names kept for backward compatibility) |
 | `JWT_SECRET` | backend | Signs access/refresh tokens |
 | `ML_SERVICE_URL` | backend | Base URL of the ML service |
 | `MODEL_PATH` | ml-service | Path to the trained model directory (defaults to `./models/chd-classifier`) |
@@ -82,6 +80,8 @@ Never commit `.env` files or real secrets — see `.gitignore`.
 | Component | Host |
 |---|---|
 | Backend | [Render](https://render.com), built from `backend/Dockerfile` |
+| Database | [Supabase](https://supabase.com) PostgreSQL |
+| Object storage | [Supabase](https://supabase.com) Storage (S3-compatible) |
 | Frontend | [Vercel](https://vercel.com), proxies `/api/*` to the Render backend (`frontend/vercel.json`) |
 | ML service | Deployable via `ml-service/Dockerfile` (e.g. Render, Hugging Face Spaces) |
 
