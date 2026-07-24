@@ -44,6 +44,13 @@ public class ScanController {
                 .body(ApiResponse.success("Scan uploaded successfully", response));
     }
 
+    @GetMapping("/pending-count")
+    public ResponseEntity<ApiResponse<Long>> getPendingScanCount(Authentication authentication) {
+        UUID doctorId = UUID.fromString(authentication.getName());
+        long count = scanService.getPendingScanCount(doctorId);
+        return ResponseEntity.ok(ApiResponse.success(count));
+    }
+
     @GetMapping("/{scanId}")
     public ResponseEntity<ApiResponse<ScanResponse>> getScan(
             @PathVariable UUID scanId,

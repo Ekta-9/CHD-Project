@@ -14,6 +14,13 @@ import java.util.UUID;
 public interface EcgScanRepository extends JpaRepository<EcgScan, UUID> {
     @Query("SELECT s FROM EcgScan s WHERE s.patient.patientId = :patientId ORDER BY s.uploadedAt DESC")
     Page<EcgScan> findByPatientId(@Param("patientId") UUID patientId, Pageable pageable);
+
+    // A scan is "pending" if it's been uploaded for a patient this doctor can
+    // access, but no ML result exists for it yet.
+    @Query("SELECT COUNT(s) FROM EcgScan s " +
+            "WHERE s.patient.patientId IN (SELECT pa.patient.patientId FROM PatientAccess pa WHERE pa.doctor.doctorId = :doctorId) " +
+            "AND NOT EXISTS (SELECT 1 FROM MlResult m WHERE m.scan.scanId = s.scanId)")
+    long countPendingByDoctorId(@Param("doctorId") UUID doctorId);
 }
 
 

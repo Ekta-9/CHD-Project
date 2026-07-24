@@ -41,6 +41,10 @@ window.onload = async function () {
         const result = await API.listPatients();
         patients = result.content || [];
         renderPatients(patients);
+
+        // Load pending scan count
+        const pendingCount = await API.getPendingScanCount();
+        document.getElementById('pendingScansCount').innerText = pendingCount;
     } catch (error) {
         console.error('Failed to load data:', error);
         // If unauthorized, redirect to login

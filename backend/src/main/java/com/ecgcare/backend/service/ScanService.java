@@ -158,6 +158,10 @@ public class ScanService {
                 }
         }
 
+        public long getPendingScanCount(UUID doctorId) {
+                return scanRepository.countPendingByDoctorId(doctorId);
+        }
+
         public com.ecgcare.backend.dto.response.PageResponse<ScanResponse> listPatientScans(UUID patientId,
                         UUID doctorId,
                         int page, int size) {

@@ -318,6 +318,17 @@ async function deletePatient(patientId) {
  * @param {string} metadata - Optional metadata (notes, device info, etc.)
  * @returns {Promise<Object>} - { scanId, patientId, storageUri, mimetype, uploadedAt }
  */
+async function getPendingScanCount() {
+    const response = await authenticatedFetch(`${API_BASE_URL}/scans/pending-count`);
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.error?.message || 'Failed to get pending scan count');
+    }
+
+    return result.data;
+}
+
 async function uploadScan(file, patientId, metadata = '') {
     const formData = new FormData();
     formData.append('file', file);
@@ -510,6 +521,7 @@ window.API = {
     deletePatient,
     
     // Scans
+    getPendingScanCount,
     uploadScan,
     getScan,
     downloadScan,
