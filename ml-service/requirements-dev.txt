@@ -1,0 +1,9 @@
+# Test-only dependencies for the ML service.
+# The heavy runtime deps (torch, transformers) are NOT needed to run the
+# tests - conftest.py substitutes lightweight fakes for them.
+fastapi==0.104.1
+pydantic==2.5.0
+pillow==10.1.0
+httpx==0.27.2
+pytest==8.3.4
+pytest-cov==6.0.0
