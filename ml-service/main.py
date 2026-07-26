@@ -66,7 +66,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     error_msg = f"Validation error: {str(exc)}"
     print(f"--- VALIDATION ERROR: {error_msg} ---")
-    print(f"--- Request body: {await request.body()} ---")
+    # NOTE: never `await request.body()` here - the body stream was already
+    # consumed during validation, so awaiting it again deadlocks the request.
+    # exc.errors() already includes the offending input values.
     return JSONResponse(
         status_code=422,
         content={"detail": error_msg, "errors": exc.errors()}
@@ -94,7 +96,9 @@ else:
     print(f"--- Using MODEL_PATH as-is: {MODEL_NAME} ---")
 
 # Verify the path exists if it's a local path
-if not MODEL_NAME.startswith("http") and "/" in MODEL_NAME and not MODEL_NAME.startswith("google/"):
+# (checks both separators: converted paths use "\" on Windows)
+if not MODEL_NAME.startswith("http") and ("/" in MODEL_NAME or "\\" in MODEL_NAME) \
+        and not MODEL_NAME.startswith("google/"):
     model_path_obj = Path(MODEL_NAME)
     if not model_path_obj.exists():
         print(f"--- WARNING: Model path does not exist: {MODEL_NAME} ---")

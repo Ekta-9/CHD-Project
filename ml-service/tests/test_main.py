@@ -127,3 +127,88 @@ def test_predict_validation_error_returns_422(client):
     response = client.post("/predict", json={"image_data": {"unexpected": "object"}})
     assert response.status_code == 422
     assert "Validation error" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# /predict internal failure wrappers (each inner try/except returns 500)
+# ---------------------------------------------------------------------------
+
+def test_predict_reports_preprocessing_failure(client, app_main, monkeypatch):
+    def broken_processor(images=None, return_tensors=None):
+        raise RuntimeError("processor exploded")
+
+    monkeypatch.setattr(app_main, "processor", broken_processor)
+    response = client.post("/predict", json={"scan_id": "x", "image_data": png_b64()})
+    assert response.status_code == 500
+    assert "Failed to preprocess image" in response.json()["detail"]
+
+
+def test_predict_reports_inference_failure(client, app_main, monkeypatch):
+    class BrokenModel:
+        def __call__(self, **kwargs):
+            raise RuntimeError("inference exploded")
+
+    monkeypatch.setattr(app_main, "model", BrokenModel())
+    response = client.post("/predict", json={"scan_id": "x", "image_data": png_b64()})
+    assert response.status_code == 500
+    assert "Failed to run inference" in response.json()["detail"]
+
+
+def test_predict_reports_missing_logits(client, app_main, monkeypatch):
+    class NoLogitsOutput:
+        pass  # deliberately no .logits attribute
+
+    class WeirdModel:
+        def __call__(self, **kwargs):
+            return NoLogitsOutput()
+
+    monkeypatch.setattr(app_main, "model", WeirdModel())
+    response = client.post("/predict", json={"scan_id": "x", "image_data": png_b64()})
+    assert response.status_code == 500
+    assert "Failed to extract logits" in response.json()["detail"]
+
+
+def test_predict_reports_softmax_failure(client, app_main, monkeypatch):
+    import sys
+
+    def broken_softmax(logits, dim=-1):
+        raise RuntimeError("softmax exploded")
+
+    monkeypatch.setattr(sys.modules["torch"], "softmax", broken_softmax)
+    response = client.post("/predict", json={"scan_id": "x", "image_data": png_b64()})
+    assert response.status_code == 500
+    assert "Failed to compute probabilities" in response.json()["detail"]
+
+
+def test_predict_reports_argmax_failure(client, app_main, monkeypatch):
+    from types import SimpleNamespace
+
+    class BadLogits:
+        values = [1.0, 2.0, 3.0]
+        shape = (1, 3)
+
+        def argmax(self, _dim=-1):
+            raise RuntimeError("argmax exploded")
+
+    class ArgmaxModel:
+        def __call__(self, **kwargs):
+            return SimpleNamespace(logits=BadLogits())
+
+    monkeypatch.setattr(app_main, "model", ArgmaxModel())
+    response = client.post("/predict", json={"scan_id": "x", "image_data": png_b64()})
+    assert response.status_code == 500
+    assert "Failed to get predicted class" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Development fallback: test_image.jpg in the working directory
+# ---------------------------------------------------------------------------
+
+def test_predict_uses_fallback_test_image_when_present(client, tmp_path, monkeypatch):
+    img_path = tmp_path / "test_image.jpg"
+    Image.new("RGB", (8, 8), (10, 20, 30)).save(img_path, format="JPEG")
+    monkeypatch.chdir(tmp_path)  # main.py opens the fallback relative to cwd
+
+    response = client.post("/predict", json={"scan_id": "fallback"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "COMPLETED"
