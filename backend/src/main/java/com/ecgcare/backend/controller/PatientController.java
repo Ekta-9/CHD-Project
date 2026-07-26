@@ -50,7 +50,8 @@ public class PatientController {
             @RequestParam(defaultValue = "desc") String order,
             Authentication authentication) {
         UUID doctorId = UUID.fromString(authentication.getName());
-        PageResponse<PatientResponse> response = patientService.listPatients(doctorId, page, size, sort, order);
+        UUID sessionId = (UUID) authentication.getCredentials();
+        PageResponse<PatientResponse> response = patientService.listPatients(doctorId, sessionId, page, size, sort, order);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

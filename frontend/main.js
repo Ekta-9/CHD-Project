@@ -135,14 +135,13 @@ function renderPatients(data) {
     }
 
     data.forEach((patient) => {
+        const name = patient.patientData?.name || 'Unknown Patient';
         const card = document.createElement('div');
         card.className = 'patient-card';
         card.innerHTML = `
             <div>
-                <h3>Patient Record</h3>
-                <small>Code: ${patient.anonymizedCode}</small>
-                <br>
-                <small style="color: #999;">Access: ${patient.accessRole} | Created: ${new Date(patient.createdAt).toLocaleDateString()}</small>
+                <h3>${name}</h3>
+                <small style="color: #999; text-transform: capitalize;">Access: ${patient.accessRole} | Created: ${new Date(patient.createdAt).toLocaleDateString()}</small>
             </div>
             <button class="btn-secondary" onclick="viewPatientDetails('${patient.patientId}')">View Details</button>
         `;
@@ -168,18 +167,19 @@ function filterPatients() {
             return;
         }
         
-        // Search by anonymized code (available in list)
+        // Search by patient name or anonymized code
         const searchLower = query.toLowerCase();
         const filtered = patients.filter(patient => {
-            return patient.anonymizedCode && patient.anonymizedCode.toLowerCase().includes(searchLower);
+            const nameMatch = patient.patientData?.name && patient.patientData.name.toLowerCase().includes(searchLower);
+            const codeMatch = patient.anonymizedCode && patient.anonymizedCode.toLowerCase().includes(searchLower);
+            return nameMatch || codeMatch;
         });
-        
+
         renderPatients(filtered);
-        
-        // Show message if searching by name
+
         if (filtered.length === 0 && query.length > 2) {
-            document.getElementById('patient-list-container').innerHTML = 
-                '<p style="text-align: center; color: #888; padding: 20px;">No patients found matching "<strong>' + query + '</strong>".<br><small>Search by patient code (e.g., PAT-...). Patient names are encrypted and not searchable in list view.</small></p>';
+            document.getElementById('patient-list-container').innerHTML =
+                '<p style="text-align: center; color: #888; padding: 20px;">No patients found matching "<strong>' + query + '</strong>".</p>';
         }
     }, 300);
 }

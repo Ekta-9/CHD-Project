@@ -154,11 +154,19 @@ public class PatientService {
         }
     }
 
-    public PageResponse<PatientResponse> listPatients(UUID doctorId, int page, int size, String sort, String order) {
+    public PageResponse<PatientResponse> listPatients(UUID doctorId, UUID sessionId, int page, int size, String sort, String order) {
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort != null ? sort : "createdAt"));
 
         Page<Patient> patients = patientRepository.findPatientsByDoctorId(doctorId, pageable);
+
+        // Fetch every key for this doctor in one query (instead of one query per
+        // patient) so decrypting names for the whole page doesn't turn into N+1.
+        Map<UUID, PatientKey> keysByPatientId = patientKeyRepository.findByDoctor_DoctorId(doctorId).stream()
+                .collect(Collectors.toMap(pk -> pk.getPatient().getPatientId(), pk -> pk));
+
+        PrivateKey privateKey = doctorKeyCache.get(sessionId)
+                .orElseThrow(() -> new UnauthorizedException("Session encryption key not available - please log in again"));
 
         List<PatientResponse> patientResponses = patients.getContent().stream()
                 .map(patient -> {
@@ -166,9 +174,30 @@ public class PatientService {
                             .findRoleByPatientIdAndDoctorId(patient.getPatientId(), doctorId)
                             .orElse(PatientAccess.AccessRole.viewer);
 
+                    Map<String, Object> patientData = null;
+                    PatientKey patientKey = keysByPatientId.get(patient.getPatientId());
+                    if (patientKey != null) {
+                        try {
+                            EncryptionService.EncryptedData wrappedDek = new EncryptionService.EncryptedData(
+                                    patientKey.getDekEnc(),
+                                    patientKey.getDekIv(),
+                                    patientKey.getDekTag());
+                            SecretKey dek = encryptionService.unwrapKey(wrappedDek, privateKey);
+
+                            EncryptionService.EncryptedData encryptedData = new EncryptionService.EncryptedData(
+                                    patient.getEncPayload(),
+                                    patient.getEncPayloadIv(),
+                                    patient.getEncPayloadTag());
+                            patientData = encryptionService.decryptJson(encryptedData, dek);
+                        } catch (Exception e) {
+                            log.error("Failed to decrypt patient {} for list view", patient.getPatientId(), e);
+                        }
+                    }
+
                     return PatientResponse.builder()
                             .patientId(patient.getPatientId())
                             .anonymizedCode(patient.getAnonymizedCode())
+                            .patientData(patientData)
                             .accessRole(role)
                             .createdAt(patient.getCreatedAt())
                             .updatedAt(patient.getUpdatedAt())
