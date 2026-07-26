@@ -674,7 +674,7 @@ async function viewScanImage(scanId) {
 }
 
 async function analyzeScan(scanId) {
-    if (!(await showConfirm('Trigger ML analysis for this scan?'))) return;
+    if (!(await showConfirm('Are you sure you want to analyze this scan?'))) return;
 
     try {
         const result = await API.predictFromScan(scanId);
