@@ -676,20 +676,24 @@ async function viewScanImage(scanId) {
 async function analyzeScan(scanId) {
     if (!(await showConfirm('Are you sure you want to analyze this scan?'))) return;
 
+    const overlay = document.getElementById('analysisLoadingOverlay');
+    overlay.classList.add('show');
+
     try {
-        const result = await API.predictFromScan(scanId);
+        await API.predictFromScan(scanId);
+        const patientId = currentPatient?.patientId;
 
-        const probsHtml = Object.entries(result.classProbabilities)
-            .map(([label, prob]) => `${label}: ${(prob * 100).toFixed(2)}%`)
-            .join('<br>');
-        showBanner(
-            'viewPatientModalBanner',
-            `<strong>ML Analysis Complete</strong><br>Predicted Diagnosis: ${result.predictedLabel}<br>Confidence: ${(result.confidenceScore * 100).toFixed(2)}%<br><br>${probsHtml}`,
-            'success',
-            true
-        );
+        overlay.classList.remove('show');
+        closeViewPatientModal();
 
+        if (patientId) {
+            switchTab('report');
+            await loadPatientsForReport();
+            document.getElementById('reportPatientSelect').value = patientId;
+            await generateReport();
+        }
     } catch (error) {
+        overlay.classList.remove('show');
         showBanner('viewPatientModalBanner', 'ML analysis failed: ' + error.message);
     }
 }
@@ -742,7 +746,8 @@ async function loadPatientsForReport() {
         result.content.forEach(patient => {
             const option = document.createElement('option');
             option.value = patient.patientId;
-            option.textContent = `${patient.anonymizedCode} (Created: ${new Date(patient.createdAt).toLocaleDateString()})`;
+            const name = patient.patientData?.name || 'Unknown Patient';
+            option.textContent = `${name} (Created: ${new Date(patient.createdAt).toLocaleDateString()})`;
             select.appendChild(option);
         });
     } catch (error) {
