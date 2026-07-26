@@ -130,7 +130,7 @@ function renderPatients(data) {
     document.getElementById('totalPatientsCount').innerText = data.length;
 
     if (data.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">No patients found. Click "+ Add New Patient" to add one.</p>';
+        container.innerHTML = '<p style="text-align: center; color: #52677D; padding: 20px;">No patients found. Click "+ Add New Patient" to add one.</p>';
         return;
     }
 
@@ -141,7 +141,7 @@ function renderPatients(data) {
         card.innerHTML = `
             <div>
                 <h3>${name}</h3>
-                <small style="color: #999; text-transform: capitalize;">Access: ${patient.accessRole} | Created: ${new Date(patient.createdAt).toLocaleDateString()}</small>
+                <small style="color: #52677D; text-transform: capitalize;">Access: ${patient.accessRole} | Created: ${new Date(patient.createdAt).toLocaleDateString()}</small>
             </div>
             <button class="btn-secondary" onclick="viewPatientDetails('${patient.patientId}')">View Details</button>
         `;
@@ -179,7 +179,7 @@ function filterPatients() {
 
         if (filtered.length === 0 && query.length > 2) {
             document.getElementById('patient-list-container').innerHTML =
-                '<p style="text-align: center; color: #888; padding: 20px;">No patients found matching "<strong>' + query + '</strong>".</p>';
+                '<p style="text-align: center; color: #52677D; padding: 20px;">No patients found matching "<strong>' + query + '</strong>".</p>';
         }
     }, 300);
 }
@@ -302,53 +302,53 @@ async function viewPatientDetails(patientId) {
         const content = document.getElementById('patientDetailsContent');
         content.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <div style="background: #52677D; padding: 20px; border-radius: 8px; color: #DEE1E9;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
-                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Name</p>
+                            <p style="margin: 0 0 5px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem;">Name</p>
                             <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${p.name}</p>
                         </div>
                         <div>
-                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Age</p>
+                            <p style="margin: 0 0 5px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem;">Age</p>
                             <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${p.age}</p>
                         </div>
                         <div>
-                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Gender</p>
+                            <p style="margin: 0 0 5px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem;">Gender</p>
                             <p style="margin: 0; font-weight: 600;">${p.gender}</p>
                         </div>
                         <div>
-                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Date of Birth</p>
+                            <p style="margin: 0 0 5px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem;">Date of Birth</p>
                             <p style="margin: 0; font-weight: 600;">${p.dateOfBirth || 'N/A'}</p>
                         </div>
                         <div style="grid-column: 1 / -1;">
-                            <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Phone</p>
+                            <p style="margin: 0 0 5px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem;">Phone</p>
                             <p style="margin: 0; font-weight: 600;">${p.phone || 'N/A'}</p>
                         </div>
                     </div>
                 </div>
 
-                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <div style="background: #52677D; padding: 20px; border-radius: 8px; color: #DEE1E9;">
                     <div style="margin-bottom: 15px;">
-                        <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Medical History</p>
+                        <p style="margin: 0 0 8px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem; font-weight: 600;">Medical History</p>
                         <p style="margin: 0; line-height: 1.6;">${p.medicalHistory || 'No medical history recorded'}</p>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Diagnosis</p>
+                        <p style="margin: 0 0 8px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem; font-weight: 600;">Diagnosis</p>
                         <p style="margin: 0; line-height: 1.6;">${p.diagnosis || 'No diagnosis recorded'}</p>
                     </div>
                     <div>
-                        <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem; font-weight: 600;">Notes</p>
+                        <p style="margin: 0 0 8px 0; color: rgba(222, 225, 233, 0.7); font-size: 0.85rem; font-weight: 600;">Notes</p>
                         <p style="margin: 0; line-height: 1.6;">${p.notes || 'No notes recorded'}</p>
                     </div>
                 </div>
 
-                <div style="background: #e8e8e8; padding: 15px; border-radius: 6px; font-size: 0.85rem; color: #555;">
+                <div style="background: #52677D; padding: 15px; border-radius: 6px; font-size: 0.85rem; color: #DEE1E9;">
                     <p style="margin: 0 0 8px 0;"><strong>Anonymized Code:</strong> ${patient.anonymizedCode}</p>
                     <p style="margin: 0 0 8px 0;"><strong>Access Role:</strong> <span style="text-transform: capitalize;">${patient.accessRole}</span></p>
                     <p style="margin: 0;"><strong>Created:</strong> ${new Date(patient.createdAt).toLocaleString()}</p>
                 </div>
 
-                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; border: 1px solid #52677D;">
                     <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Scans</h3>
                     <div id="patientScansContainer" style="margin-bottom: 15px;">
                         <!-- Scans will be loaded here -->
@@ -508,15 +508,15 @@ async function loadPatientScans(patientId) {
         const container = document.getElementById('patientScansContainer');
         
         if (scans.length === 0) {
-            container.innerHTML = '<p style="color: #888; text-align: center; padding: 15px; background: #f9f9f9; border-radius: 8px;">No scans uploaded yet.</p>';
+            container.innerHTML = '<p style="color: #52677D; text-align: center; padding: 15px; background: #DEE1E9; border-radius: 8px;">No scans uploaded yet.</p>';
             return;
         }
         
         container.innerHTML = scans.map(scan => `
-            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: #DEE1E9; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <div style="font-weight: 600;">Scan</div>
-                    <small style="color: #666;">Uploaded: ${new Date(scan.uploadedAt).toLocaleString()}</small>
+                    <small style="color: #52677D;">Uploaded: ${new Date(scan.uploadedAt).toLocaleString()}</small>
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <button onclick="viewScanImage('${scan.scanId}')" class="btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">View</button>
@@ -794,15 +794,15 @@ function generateReportHTML(patient, scans, predictions) {
     return `
         <div style="max-width: 800px; margin: 0 auto;">
             <!-- Header -->
-            <div style="text-align: center; border-bottom: 3px solid #333; padding-bottom: 20px; margin-bottom: 30px;">
-                <h1 style="margin: 0; color: #333; font-size: 2rem;">CHD-EPICS Medical Report</h1>
-                <p style="margin: 10px 0 0 0; color: #666;">Chronic Heart Defects - ECG Prediction System</p>
-                <p style="margin: 5px 0 0 0; color: #999; font-size: 0.9rem;">Generated: ${currentDate}</p>
+            <div style="text-align: center; border-bottom: 3px solid #1C2E4A; padding-bottom: 20px; margin-bottom: 30px;">
+                <h1 style="margin: 0; color: #1C2E4A; font-size: 2rem;">CHD-EPICS Medical Report</h1>
+                <p style="margin: 10px 0 0 0; color: #52677D;">Chronic Heart Defects - ECG Prediction System</p>
+                <p style="margin: 5px 0 0 0; color: #52677D; font-size: 0.9rem;">Generated: ${currentDate}</p>
             </div>
             
             <!-- Patient Information -->
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Patient Information</h2>
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="margin: 0 0 15px 0; color: #1C2E4A; font-size: 1.3rem; border-bottom: 2px solid #52677D; padding-bottom: 10px;">Patient Information</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><strong>Name:</strong> ${p.name}</div>
                     <div><strong>Age:</strong> ${p.age} years</div>
@@ -814,20 +814,20 @@ function generateReportHTML(patient, scans, predictions) {
             </div>
             
             <!-- Medical History -->
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Medical History</h2>
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="margin: 0 0 15px 0; color: #1C2E4A; font-size: 1.3rem; border-bottom: 2px solid #52677D; padding-bottom: 10px;">Medical History</h2>
                 <p style="line-height: 1.6; margin: 0;">${p.medicalHistory || 'No medical history recorded'}</p>
             </div>
             
             <!-- Current Diagnosis -->
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Current Diagnosis</h2>
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="margin: 0 0 15px 0; color: #1C2E4A; font-size: 1.3rem; border-bottom: 2px solid #52677D; padding-bottom: 10px;">Current Diagnosis</h2>
                 <p style="line-height: 1.6; margin: 0;">${p.diagnosis || 'No diagnosis recorded'}</p>
             </div>
             
             <!-- ECG Scans Summary -->
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Scans Summary</h2>
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="margin: 0 0 15px 0; color: #1C2E4A; font-size: 1.3rem; border-bottom: 2px solid #52677D; padding-bottom: 10px;">Scans Summary</h2>
                 ${scans.length > 0 ? `
                     <p><strong>Total Scans:</strong> ${scans.length}</p>
                     <ul style="margin: 10px 0; padding-left: 20px;">
@@ -841,20 +841,20 @@ function generateReportHTML(patient, scans, predictions) {
             </div>
             
             <!-- ML Predictions -->
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">ML Analysis Results</h2>
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="margin: 0 0 15px 0; color: #1C2E4A; font-size: 1.3rem; border-bottom: 2px solid #52677D; padding-bottom: 10px;">ML Analysis Results</h2>
                 ${predictions.length > 0 ? `
                     <p><strong>Total Analyses:</strong> ${predictions.length}</p>
                     <div style="margin-top: 15px;">
                         ${predictions.map((pred, index) => `
-                            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid ${pred.confidenceScore > 0.8 ? '#16a34a' : '#f59e0b'};">
+                            <div style="background: #DEE1E9; padding: 15px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid ${pred.confidenceScore > 0.8 ? '#16a34a' : '#f59e0b'};">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                     <strong style="font-size: 1.1rem;">Analysis #${predictions.length - index}</strong>
-                                    <span style="color: #666; font-size: 0.9rem;">${new Date(pred.createdAt).toLocaleString()}</span>
+                                    <span style="color: #52677D; font-size: 0.9rem;">${new Date(pred.createdAt).toLocaleString()}</span>
                                 </div>
                                 <div style="margin-bottom: 5px;">
                                     <strong>Predicted Diagnosis:</strong> 
-                                    <span style="color: #333; font-size: 1.05rem;">${pred.predictedLabel}</span>
+                                    <span style="color: #1C2E4A; font-size: 1.05rem;">${pred.predictedLabel}</span>
                                 </div>
                                 <div>
                                     <strong>Confidence Score:</strong> 
@@ -869,13 +869,13 @@ function generateReportHTML(patient, scans, predictions) {
             </div>
             
             <!-- Doctor's Notes -->
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Doctor's Notes</h2>
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="margin: 0 0 15px 0; color: #1C2E4A; font-size: 1.3rem; border-bottom: 2px solid #52677D; padding-bottom: 10px;">Doctor's Notes</h2>
                 <p style="line-height: 1.6; margin: 0;">${p.notes || 'No additional notes'}</p>
             </div>
             
             <!-- Footer -->
-            <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 0.9rem;">
+            <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #52677D; color: #52677D; font-size: 0.9rem;">
                 <p style="margin: 0;">This report was generated automatically by CHD-EPICS</p>
                 <p style="margin: 5px 0 0 0;">For medical use only. Confidential patient information.</p>
             </div>
@@ -923,26 +923,26 @@ async function showAccountDetails() {
         
         const content = document.getElementById('accountDetailsContent');
         content.innerHTML = `
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+            <div style="background: #DEE1E9; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
                 <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Full Name</p>
+                    <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Full Name</p>
                     <p style="margin: 0; font-weight: 600; font-size: 1.1rem;">${user.fullName}</p>
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Email</p>
+                    <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Email</p>
                     <p style="margin: 0; font-weight: 600;">${user.email}</p>
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Phone</p>
+                    <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Phone</p>
                     <p style="margin: 0; font-weight: 600;">${user.phone || 'Not provided'}</p>
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; color: #666; font-size: 0.85rem;">Doctor ID</p>
-                    <p style="margin: 0; font-weight: 600; font-size: 0.85rem; color: #666;">${user.doctorId}</p>
+                    <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Doctor ID</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 0.85rem; color: #52677D;">${user.doctorId}</p>
                 </div>
             </div>
             
-            <div style="background: #e8e8e8; padding: 15px; border-radius: 6px; font-size: 0.85rem; color: #555;">
+            <div style="background: #52677D; padding: 15px; border-radius: 6px; font-size: 0.85rem; color: #DEE1E9;">
                 <p style="margin: 0 0 8px 0;"><strong>Account Status:</strong> <span style="color: ${user.isActive ? '#16a34a' : '#dc2626'};">${user.isActive ? 'Active' : 'Inactive'}</span></p>
                 <p style="margin: 0 0 8px 0;"><strong>MFA Enabled:</strong> ${user.mfaEnabled ? 'Yes' : 'No'}</p>
                 <p style="margin: 0;"><strong>Account Created:</strong> ${new Date(user.createdAt).toLocaleString()}</p>
