@@ -795,8 +795,8 @@ function generateReportHTML(patient, scans, predictions) {
         <div style="max-width: 800px; margin: 0 auto;">
             <!-- Header -->
             <div style="text-align: center; border-bottom: 3px solid #1C2E4A; padding-bottom: 20px; margin-bottom: 30px;">
-                <h1 style="margin: 0; color: #1C2E4A; font-size: 2rem;">CHD-EPICS Medical Report</h1>
-                <p style="margin: 10px 0 0 0; color: #52677D;">Chronic Heart Defects - ECG Prediction System</p>
+                <h1 style="margin: 0; color: #1C2E4A; font-size: 2rem;">Patient Report</h1>
+                <p style="margin: 10px 0 0 0; color: #52677D;">Congenital Heart Defects - Prediction System</p>
                 <p style="margin: 5px 0 0 0; color: #52677D; font-size: 0.9rem;">Generated: ${currentDate}</p>
             </div>
             
@@ -874,12 +874,11 @@ function generateReportHTML(patient, scans, predictions) {
                 <p style="line-height: 1.6; margin: 0;">${p.notes || 'No additional notes'}</p>
             </div>
             
-            <!-- Footer -->
-            <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #52677D; color: #52677D; font-size: 0.9rem;">
-                <p style="margin: 0;">This report was generated automatically by CHD-EPICS</p>
-                <p style="margin: 5px 0 0 0;">For medical use only. Confidential patient information.</p>
+            <!-- Disclaimer -->
+            <div style="text-align: center; margin-top: 40px; padding: 15px; padding-top: 20px; border-top: 2px solid #52677D; background: #DEE1E9; color: #52677D; font-size: 0.85rem; line-height: 1.5;">
+                This report is generated automatically based on the system's analysis and is intended for assistance only. It should not be taken as a medical diagnosis.
             </div>
-            
+
             <!-- Action Buttons -->
             <div style="text-align: center; margin-top: 30px;">
                 <button onclick="printReport()" class="btn-primary" style="margin-right: 10px;">
