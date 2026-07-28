@@ -252,13 +252,14 @@ class PatientServiceTest {
 
     @Test
     void listPatientsReturnsPageWithRoles() throws Exception {
+        doctorKeyCache.put(sessionId, doctorKeyPair.getPrivate());
         Patient patient = encryptedPatient(Map.of("name", "Baby A")).patient();
         when(patientRepository.findPatientsByDoctorId(eq(doctorId), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(patient), PageRequest.of(0, 20), 1));
         when(patientAccessRepository.findRoleByPatientIdAndDoctorId(patientId, doctorId))
                 .thenReturn(Optional.of(PatientAccess.AccessRole.editor));
 
-        PageResponse<PatientResponse> response = patientService.listPatients(doctorId, 0, 20, "createdAt", "desc");
+        PageResponse<PatientResponse> response = patientService.listPatients(doctorId, sessionId, 0, 20, "createdAt", "desc");
 
         assertThat(response.getContent()).hasSize(1);
         assertThat(response.getContent().get(0).getPatientId()).isEqualTo(patientId);
@@ -269,10 +270,11 @@ class PatientServiceTest {
 
     @Test
     void listPatientsDefaultsSortAndAscendingOrder() throws Exception {
+        doctorKeyCache.put(sessionId, doctorKeyPair.getPrivate());
         when(patientRepository.findPatientsByDoctorId(eq(doctorId), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
-        PageResponse<PatientResponse> response = patientService.listPatients(doctorId, 0, 10, null, "asc");
+        PageResponse<PatientResponse> response = patientService.listPatients(doctorId, sessionId, 0, 10, null, "asc");
 
         assertThat(response.getContent()).isEmpty();
     }

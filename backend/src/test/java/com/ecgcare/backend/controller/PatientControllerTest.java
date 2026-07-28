@@ -116,7 +116,7 @@ class PatientControllerTest {
 
     @Test
     void listPatientsPassesPagingParameters() throws Exception {
-        when(patientService.listPatients(doctorId, 2, 5, "updatedAt", "asc")).thenReturn(
+        when(patientService.listPatients(doctorId, sessionId, 2, 5, "updatedAt", "asc")).thenReturn(
                 PageResponse.<PatientResponse>builder()
                         .content(List.of(PatientResponse.builder().patientId(patientId).build()))
                         .pagination(PageResponse.PaginationInfo.builder()
