@@ -931,13 +931,9 @@ async function showAccountDetails() {
                     <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Email</p>
                     <p style="margin: 0; font-weight: 600;">${user.email}</p>
                 </div>
-                <div style="margin-bottom: 15px;">
+                <div>
                     <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Phone</p>
                     <p style="margin: 0; font-weight: 600;">${user.phone || 'Not provided'}</p>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; color: #52677D; font-size: 0.85rem;">Doctor ID</p>
-                    <p style="margin: 0; font-weight: 600; font-size: 0.85rem; color: #52677D;">${user.doctorId}</p>
                 </div>
             </div>
             
