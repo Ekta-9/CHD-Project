@@ -66,6 +66,13 @@ node_modules/
 **/stderr.log
 ml-service/test_*.py
 
+# Test output artifacts
+.pytest_cache/
+.coverage
+ml-service/coverage-html/
+frontend/playwright-report/
+frontend/test-results/
+
 # Large model files (should be downloaded separately)
 **/models/**/*.safetensors
 **/models/**/*.bin

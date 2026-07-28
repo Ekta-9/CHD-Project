@@ -1,0 +1,15 @@
+{
+  "name": "chd-epics-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CHD-EPICS frontend static pages + Playwright end-to-end tests",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "serve": "http-server -p 4173 -c-1 ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "http-server": "^14.1.1"
+  }
+}
