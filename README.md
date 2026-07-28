@@ -1,14 +1,68 @@
-# CHD-EPICS (ECGCare)
+# HeartTrace: Congenital Heart Defect Screening
 
-A web app for doctors to upload ECG scans and get an ML-assisted screening for congenital heart defects (CHD) — classifying scans as **Normal**, **ASD**, or **VSD**.
+A web app for doctors to upload a patient's chest X-ray and receive an ML-assisted screening for congenital heart defects (CHD) — classifying each scan as **Normal**, **ASD** (Atrial Septal Defect), or **VSD** (Ventricular Septal Defect), alongside encrypted patient records and printable diagnostic reports.
 
-The system has three parts that talk to each other over HTTP:
+The classifier is a custom dual-branch ConvNeXt-Base model, achieving **82.6% test accuracy** and a **macro F1 score of 0.83**.
+
+---
+
+## Results
+
+| Metric | Value |
+|---|---|
+| **Test Accuracy** | **82.6%** |
+| Macro F1 | 0.83 |
+
+---
+
+## Architecture
 
 ```
-frontend  --->  backend (Spring Boot)  --->  ml-service (FastAPI)
-(static)        auth, patients, scans,       image classification
-                 storage, business logic       (ConvNeXt model)
+Chest X-ray upload (.jpg / .png)
+        |
+        v
+[Frontend]                      Doctor dashboard (HTML/CSS/JS)
+        |
+        v
+[Backend — Spring Boot]  :8080
+ JWT auth · encrypted patient
+ records · scan storage
+        |
+        v
+[Object Storage]                MinIO (dev) / Supabase Storage (prod)
+ Stores the uploaded X-ray
+        |
+        v  (doctor triggers analysis)
+[ML Service — FastAPI]  :8000
+ Dual-branch ConvNeXt-Base
+ -> Normal / ASD / VSD + confidence
+        |
+        v
+[Backend]                       Persists the prediction
+        |
+        v
+[Patient Report]                Diagnosis history, printable/PDF
 ```
+
+---
+
+## Component Overview
+
+### Backend — Spring Boot
+
+Handles doctor authentication (JWT access + refresh tokens), encrypted patient records, and orchestrates scan storage and ML analysis requests.
+
+Patient-identifying data is encrypted per record: each patient gets a unique AES data-encryption key, itself wrapped with the doctor's RSA public key — so only that doctor's authenticated session (holding the matching private key) can decrypt it. Patient, scan, and prediction actions are audit-logged.
+
+### ML Service — Dual-Branch ConvNeXt-Base
+
+A FastAPI service wrapping a custom dual-branch ConvNeXt-Base classifier. Each uploaded chest X-ray is classified into one of three categories — Normal, ASD, or VSD — with a confidence score.
+
+### Frontend — Plain HTML/CSS/JS
+
+A doctor-facing dashboard: patient records, X-ray upload, one-click ML analysis with a loading animation, and printable patient reports summarizing diagnosis history.
+
+---
 
 ## Project structure
 
@@ -16,8 +70,8 @@ frontend  --->  backend (Spring Boot)  --->  ml-service (FastAPI)
 .
 ├── backend/          Spring Boot API — auth, patients, scans, object storage, ML orchestration
 ├── frontend/          Static HTML/CSS/JS doctor dashboard (no build step)
-├── ml-service/        FastAPI service serving the trained CHD classifier
-├── docs/              Full documentation, ML service guide, and audit notes
+├── ml-service/        FastAPI service serving the trained classifier
+├── docs/              System and ML service documentation
 ├── start-all-services.ps1   Convenience script to run all three services locally
 └── .gitignore
 ```
@@ -27,7 +81,7 @@ frontend  --->  backend (Spring Boot)  --->  ml-service (FastAPI)
 | Layer | Stack |
 |---|---|
 | Backend | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, H2 (local) / PostgreSQL via Supabase (production) |
-| ML service | Python, FastAPI, PyTorch, Hugging Face Transformers (ConvNeXt) |
+| ML service | Python, FastAPI, PyTorch, Hugging Face Transformers (dual-branch ConvNeXt-Base) |
 | Frontend | Plain HTML/CSS/JavaScript |
 | File storage | S3-compatible object storage (AWS SDK v2) — local MinIO in dev, Supabase Storage in production |
 | Auth | JWT (access + refresh tokens) |
@@ -73,7 +127,6 @@ Copy the defaults in `backend/src/main/resources/application.yml` and `ml-servic
 | `ML_SERVICE_URL` | backend | Base URL of the ML service |
 | `MODEL_PATH` | ml-service | Path to the trained model directory (defaults to `./models/chd-classifier`) |
 
-Never commit `.env` files or real secrets — see `.gitignore`.
 
 ## Deployment
 
@@ -89,6 +142,5 @@ Never commit `.env` files or real secrets — see `.gitignore`.
 
 - [`docs/COMPLETE_DOCUMENTATION.md`](docs/COMPLETE_DOCUMENTATION.md) — full system documentation
 - [`docs/ML_SERVICE_GUIDE.md`](docs/ML_SERVICE_GUIDE.md) — ML service internals and model details
-- [`docs/fixes.md`](docs/fixes.md) — known issues and cleanup log from the last audit
 
 ## Documents
