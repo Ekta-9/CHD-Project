@@ -142,5 +142,3 @@ Copy the defaults in `backend/src/main/resources/application.yml` and `ml-servic
 
 - [`docs/COMPLETE_DOCUMENTATION.md`](docs/COMPLETE_DOCUMENTATION.md) — full system documentation
 - [`docs/ML_SERVICE_GUIDE.md`](docs/ML_SERVICE_GUIDE.md) — ML service internals and model details
-
-## Documents
